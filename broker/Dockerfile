@@ -13,8 +13,8 @@ COPY ./requirements.txt .
 
 RUN pip3 install -r ./requirements.txt
 
-COPY ./app /app
+COPY ./broker-app /broker-app
 
-WORKDIR /app
+WORKDIR /broker-app
 
 

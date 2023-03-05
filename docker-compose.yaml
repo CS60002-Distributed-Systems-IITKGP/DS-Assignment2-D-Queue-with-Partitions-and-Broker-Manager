@@ -31,7 +31,7 @@ services:
     broker:
         build: ./broker
         ports:
-            - '9000:8000'
+            - '9000-9020:8000'
         command: uvicorn main:app --reload --host 0.0.0.0
         environment:
             - PROJECT_NAME=Distributed-Queue
@@ -41,7 +41,7 @@ services:
             - POSTGRES_DB=appdb
             - POSTGRES_SERVER=broker_db
         volumes:
-            - ./app:/app
+            - ./broker/broker-app:/broker-app
         depends_on:
             - broker_db
 
