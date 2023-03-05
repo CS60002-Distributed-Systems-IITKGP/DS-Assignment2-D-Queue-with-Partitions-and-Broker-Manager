@@ -1,0 +1,20 @@
+
+1. Broker manager
+
+broker_manager (primary) - 8000
+
+broker_manager (read-only) - 8020
+
+
+
+
+
+2. Brokers
+
+broker 1 - 9000
+  
+broker 2 - 9100
+
+broker 3 - 9200
+
+broker 4 - 9300
