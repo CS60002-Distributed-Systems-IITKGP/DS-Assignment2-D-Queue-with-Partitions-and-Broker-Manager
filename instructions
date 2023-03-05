@@ -1,0 +1,20 @@
+initial setup
+> pip3 install -r requirements.txt
+> docker-compose up
+> cd broker-manager/app && python3 -m uvicorn main:app --reload
+> python3 init_data_demo.py
+
+close all terminals
+
+
+1. start both db using docker-compose
+> docker-compose up
+
+2. run broker-manager on 8000 port
+> cd broker-manager/app && python3 -m uvicorn main:app --reload
+
+3. run broker on 9000 9001 9002 9003 port
+new > cd broker/broker-app && python3 -m uvicorn main:app --reload --port 9000
+new > cd broker/broker-app && python3 -m uvicorn main:app --reload --port 9001
+new > cd broker/broker-app && python3 -m uvicorn main:app --reload --port 9002
+new > cd broker/broker-app && python3 -m uvicorn main:app --reload --port 9003
