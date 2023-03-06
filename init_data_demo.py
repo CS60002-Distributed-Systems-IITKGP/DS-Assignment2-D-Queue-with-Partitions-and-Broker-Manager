@@ -14,19 +14,19 @@ def brokers_initdata(data):
 data = {
     "broker_data": [
         {
-            "broker_address": "http://localhost:9000",
+            "broker_address": "http://127.0.0.1:9000",
             "hostname": "broker1"
         },
         {
-            "broker_address": "http://localhost:9001",
+            "broker_address": "http://127.0.0.1:9001",
             "hostname": "broker2"
         },
         {
-            "broker_address": "http://localhost:9002",
+            "broker_address": "http://127.0.0.1:9002",
             "hostname": "broker3"
         },
         {
-            "broker_address": "http://localhost:9003",
+            "broker_address": "http://127.0.0.1:9003",
             "hostname": "broker4"
         }
     ]

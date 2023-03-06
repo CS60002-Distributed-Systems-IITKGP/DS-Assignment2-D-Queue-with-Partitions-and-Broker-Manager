@@ -1,7 +1,7 @@
 import topics
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from core.config import settings
+# from core.config import settings
 from core.database import engine
 from core import base, database
 from sqlalchemy.orm import Session
@@ -20,12 +20,14 @@ get_db = database.get_db
 base.Base.metadata.create_all(engine)
 
 
-app = FastAPI(title=settings.PROJECT_NAME)
+app = FastAPI(title="Broker-Manager")
 
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
+    # allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
+    allow_origins=["http://localhost:8000", "https://localhost:8000",
+                   "http://localhost", "https://localhost"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
