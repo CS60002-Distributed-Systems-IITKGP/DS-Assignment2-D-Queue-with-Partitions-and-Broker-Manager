@@ -6,4 +6,3 @@ pydantic
 requests
 httpx
 aiohttp
-asyncio

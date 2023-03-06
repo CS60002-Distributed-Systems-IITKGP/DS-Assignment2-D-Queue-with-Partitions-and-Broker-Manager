@@ -5,13 +5,24 @@ from core import database
 from models import Producer, Consumer, Topic, ConsumerPartition, Partition, BrokerStatusEnum, Broker
 from pydantic import BaseModel
 import requests
+import httpx
+import aiohttp
+import asyncio
+from core.base import httpx_client
 
 get_db = database.get_db
+
+# client = http3.AsyncClient()
 
 router = APIRouter(
     prefix="/topics",
     tags=['topics']
 )
+
+
+async def fetch(session: aiohttp.ClientSession, url, data):
+    async with session.post(url, json=data) as response:
+        return await response.json()
 
 
 class TopicRequest(BaseModel):
@@ -48,51 +59,74 @@ async def create(request: TopicRequest, db: Session = Depends(get_db)):
     db.add(new_topic)
     db.commit()
     db.refresh(new_topic)
-
     # partition of topic
     # logic - divide topic in 4 brokers
     brokers = db.query(Broker).all()
-
     flag = False
-
-    for broker in brokers:
-        # create partion
-        partition = Partition(topic_id=new_topic.topic_id,
-                              broker_id=broker.broker_id)
-        # add to db
-        db.add(partition)
-        db.commit()
-        # refresh
-        db.refresh(partition)
-        # send to broker using address
-        data = {
-            "topic_name": new_topic.topic_name,
-            "partition_id":  partition.partition_id
-        }
-        try:
-            response = await requests.post(
-                f'{broker.address}/partition/add-partition', json=data)
-            print(response.json())
-            if response.status_code == 201:
-                flag = True
-            elif response.status_code == 403:
-                flag: False
-        except:
-            print('An exception occurred')
+    headers = {"Content-Type": "application/json",
+               "accept": "application/json"
+               }
+    # async with httpx.AsyncClient(follow_redirects=True) as client:
+    # try:
+    # response = await client.post('http://127.0.0.1:9000/partition/add-partition', headers=headers, json=data)
+    data = {
+        "topic_name": request.topic_name,
+        "partition_id":  1
+    }
+    async with aiohttp.ClientSession(trust_env=True) as session:
+        tasks = []
+        # response = await requests.post(
+        #     f'{broker.address}/partition/add-partition', json=data)
+        # print(response.json())
+        for broker in brokers:
+            # print(broker.broker_id)
+            # create partion
+            partition = Partition(topic_id=new_topic.topic_id,
+                                  broker_id=broker.broker_id)
+            # add to db
+            db.add(partition)
+            db.commit()
+            db.refresh(partition)       # refresh
+            # send to broker using address
+            data = {
+                "topic_name": new_topic.topic_name,
+                "partition_id":  partition.partition_id
+            }
+            task = asyncio.ensure_future(
+                fetch(session, url=f'{broker.address}/partition/add-partition', data=data))
+            tasks.append(task)
+        # for end
+        responses = await asyncio.gather(*tasks)
+        print(responses)
+        # async with session.post('http://127.0.0.1:9000/partition/add-partition', json=data) as response:
+        #     print("Status:", response.status)
+        #     res = await response.json()
+        #     print(res)
+        # try:
+        #     response = await client.post(f'{broker.address}/partition/add-partition', headers=headers, json=data)
+        #     print(response.text)
+        #     # response = await requests.post(
+        #     #     f'{broker.address}/partition/add-partition', json=data)
+        #     # print(response.json())
+        #     # if response.status_code == 201:
+        #     #     flag = True
+        #     # elif response.status_code == 403:
+        #     #     flag: False
+        # except:
+        #     print('An exception occurred')
 
     # for end
-
-    partitions = db.query(Partition).filter(
-        Partition.topic_id == new_topic.topic_id)
-    if flag:
-        return {
-            "status": "success",
-            "message": f"Topic '{new_topic.topic_name}' created successfully",
-            "partitions": partitions
-        }
-    else:
-        return {
-            "status": "failure",
-            "message": f"eror!",
-            "partitions": partitions
-        }
+    print("before partion query")
+    return {}
+    # if flag:
+    #     return {
+    #         "status": "success",
+    #         "message": f"Topic '{new_topic.topic_name}' created successfully",
+    #         "partitions": partitions
+    #     }
+    # else:
+    #     return {
+    #         "status": "failure",
+    #         "message": f"eror!",
+    #         "partitions": partitions
+    #     }

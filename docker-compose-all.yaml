@@ -1,23 +1,23 @@
 version: '3.8'
 
 services:
-    # broker_manager:
-    #     build: ./broker-manager
-    #     ports:
-    #         - '8000:8000'
-    #     command: uvicorn main:app --reload --host 0.0.0.0
-    #     environment:
-    #         - PROJECT_NAME=Broker-Manager
-    #         - BACKEND_CORS_ORIGINS=["http://localhost:8000", "https://localhost:8000", "http://localhost", "https://localhost"]
-    #         - POSTGRES_USER=user
-    #         - POSTGRES_PASSWORD=password
-    #         - POSTGRES_DB=appdb
-    #         - POSTGRES_SERVER=meta_db
-    #         - PRIMARY=1
-    #     volumes:
-    #         - ./broker-manager/app:/app
-    #     depends_on:
-    #         - meta_db
+    broker_manager:
+        build: ./broker-manager
+        ports:
+            - '8000:8000'
+        command: uvicorn main:app --reload --host 0.0.0.0
+        environment:
+            - PROJECT_NAME=Broker-Manager
+            - BACKEND_CORS_ORIGINS=["http://localhost:8000", "https://localhost:8000", "http://localhost", "https://localhost"]
+            - POSTGRES_USER=user
+            - POSTGRES_PASSWORD=password
+            - POSTGRES_DB=appdb
+            - POSTGRES_SERVER=meta_db
+            - PRIMARY=1
+        volumes:
+            - ./broker-manager/app:/app
+        depends_on:
+            - meta_db
 
     meta_db:
         image: postgres:13-alpine
@@ -45,11 +45,11 @@ services:
     #     depends_on:
     #         - broker_db
 
-    broker_db:
-        image: postgres:13-alpine
-        environment:
-            - POSTGRES_USER=user
-            - POSTGRES_PASSWORD=password
-            - POSTGRES_DB=appdb
-        ports:
-            - '5222:5432'
+    # broker_db:
+    #     image: postgres:13-alpine
+    #     environment:
+    #         - POSTGRES_USER=user
+    #         - POSTGRES_PASSWORD=password
+    #         - POSTGRES_DB=appdb
+    #     ports:
+    #         - '5222:5432'
