@@ -6,6 +6,7 @@ from core import base, database
 
 # # add routers
 import partition
+import healthcheckbroker
 # import producer
 # import consumer
 # import size
@@ -33,6 +34,7 @@ app.add_middleware(
 get_db = database.get_db
 
 app.include_router(partition.router)
+app.include_router(healthcheckbroker.router)
 # app.include_router(topics.router)
 # app.include_router(producer.router)
 # app.include_router(consumer.router)
