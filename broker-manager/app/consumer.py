@@ -8,6 +8,7 @@ import requests
 import httpx
 import aiohttp
 import asyncio
+
 get_db = database.get_db
 
 router = APIRouter(
@@ -54,6 +55,7 @@ def create(request: RegisterConumerRequest, db: Session = Depends(get_db)):
 
 
 @router.get('/consume')
+
 async def all(request: DenqueueRequest, db: Session = Depends(get_db),):
     consumer = db.query(Consumer).filter(
         Consumer.consumer_id == request.consumer_id
@@ -64,6 +66,7 @@ async def all(request: DenqueueRequest, db: Session = Depends(get_db),):
             "message": f"conumer'{request.consumer_id}' not found!"
         })
     # error_flag = True
+
     topic_matched = consumer.topic
     # print(topic_matched)
     if (topic_matched.topic_name == request.topic):
@@ -119,12 +122,9 @@ async def all(request: DenqueueRequest, db: Session = Depends(get_db),):
             return {"status": "success", "responses": data}
         else:
             return {"response": response}
+
     else:
         raise HTTPException(status_code=404, detail={
             "status": "failure",
             "message": f"Topic '{request.topic}' not found!"
         })
-        
-
-
-        
