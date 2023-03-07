@@ -8,11 +8,9 @@ import requests
 import httpx
 import aiohttp
 import asyncio
-from core.base import httpx_client
 
 get_db = database.get_db
 
-# client = http3.AsyncClient()
 
 router = APIRouter(
     prefix="/topics",
@@ -22,7 +20,9 @@ router = APIRouter(
 
 async def fetch(session: aiohttp.ClientSession, url, data):
     async with session.post(url, json=data) as response:
-        return await response.json()
+        res = await response.json()
+        stat = response.status
+        return {'status': stat, 'response': res}
 
 
 class TopicRequest(BaseModel):
@@ -43,7 +43,7 @@ def all(db: Session = Depends(get_db),):
 
 
 @router.post('/', status_code=status.HTTP_201_CREATED,)
-async def create(request: TopicRequest, db: Session = Depends(get_db)):
+async def create_topic(request: TopicRequest, db: Session = Depends(get_db)):
     topic = db.query(Topic).filter(
         Topic.topic_name == request.topic_name
     ).first()
@@ -59,27 +59,16 @@ async def create(request: TopicRequest, db: Session = Depends(get_db)):
     db.add(new_topic)
     db.commit()
     db.refresh(new_topic)
-    # partition of topic
+    # -------- partition of topic -----------
     # logic - divide topic in 4 brokers
     brokers = db.query(Broker).all()
     flag = False
     headers = {"Content-Type": "application/json",
                "accept": "application/json"
                }
-    # async with httpx.AsyncClient(follow_redirects=True) as client:
-    # try:
-    # response = await client.post('http://127.0.0.1:9000/partition/add-partition', headers=headers, json=data)
-    data = {
-        "topic_name": request.topic_name,
-        "partition_id":  1
-    }
     async with aiohttp.ClientSession(trust_env=True) as session:
         tasks = []
-        # response = await requests.post(
-        #     f'{broker.address}/partition/add-partition', json=data)
-        # print(response.json())
         for broker in brokers:
-            # print(broker.broker_id)
             # create partion
             partition = Partition(topic_id=new_topic.topic_id,
                                   broker_id=broker.broker_id)
@@ -98,26 +87,12 @@ async def create(request: TopicRequest, db: Session = Depends(get_db)):
         # for end
         responses = await asyncio.gather(*tasks)
         print(responses)
-        # async with session.post('http://127.0.0.1:9000/partition/add-partition', json=data) as response:
-        #     print("Status:", response.status)
-        #     res = await response.json()
-        #     print(res)
-        # try:
-        #     response = await client.post(f'{broker.address}/partition/add-partition', headers=headers, json=data)
-        #     print(response.text)
-        #     # response = await requests.post(
-        #     #     f'{broker.address}/partition/add-partition', json=data)
-        #     # print(response.json())
-        #     # if response.status_code == 201:
+        # if response.status_code == 201:
         #     #     flag = True
         #     # elif response.status_code == 403:
         #     #     flag: False
-        # except:
-        #     print('An exception occurred')
-
-    # for end
-    print("before partion query")
-    return {}
+    return {"status": "success",
+            "message": f"Topic '{new_topic.topic_name}' created successfully", }
     # if flag:
     #     return {
     #         "status": "success",

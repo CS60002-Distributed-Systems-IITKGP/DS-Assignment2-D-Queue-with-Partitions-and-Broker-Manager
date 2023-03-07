@@ -7,7 +7,7 @@ from core import base, database
 # # add routers
 import partition
 import producer
-# import consumer
+import consumer
 # import size
 # import topics
 
@@ -35,7 +35,7 @@ get_db = database.get_db
 app.include_router(partition.router)
 # app.include_router(topics.router)
 app.include_router(producer.router)
-# app.include_router(consumer.router)
+app.include_router(consumer.router)
 # app.include_router(size.router)
 
 

@@ -24,34 +24,37 @@ class RegisterProducerRequest(BaseModel):
 
 async def fetch(session: aiohttp.ClientSession, url, data):
     async with session.post(url, json=data) as response:
-        return await response
+        res = await response.json()
+        stat = response.status
+        return {'status': stat, 'response': res}
 
 
 # Register producer with topics
 @router.post('/register')
 async def create(request: RegisterProducerRequest, db: Session = Depends(get_db)):
     # check topic in db
+    topic = None
     topic = db.query(Topic).filter(
         Topic.topic_name == request.topic).first()
     partitions = []
     if topic is None:
         partitions = []
         # create new topic
-        new_topic = Topic(topic_name=request.topic)
-        db.add(new_topic)
+        topic = Topic(topic_name=request.topic)
+        db.add(topic)
         db.commit()
-        db.refresh(new_topic)
+        db.refresh(topic)
         # partition of topic
         # logic - divide topic in 4 brokers
         brokers = db.query(Broker).all()
-        
+
         async with aiohttp.ClientSession(trust_env=True) as session:
             tasks = []
             for broker in brokers:
                 # print(broker.broker_id)
                 # create partion
-                partition = Partition(topic_id=new_topic.topic_id,
-                                    broker_id=broker.broker_id)
+                partition = Partition(topic_id=topic.topic_id,
+                                      broker_id=broker.broker_id)
                 # add to db
                 db.add(partition)
                 db.commit()
@@ -59,7 +62,7 @@ async def create(request: RegisterProducerRequest, db: Session = Depends(get_db)
                 partitions.append(partition)
                 # send to broker using address
                 data = {
-                    "topic_name": new_topic.topic_name,
+                    "topic_name": topic.topic_name,
                     "partition_id":  partition.partition_id
                 }
                 task = asyncio.ensure_future(
@@ -69,11 +72,14 @@ async def create(request: RegisterProducerRequest, db: Session = Depends(get_db)
             responses = await asyncio.gather(*tasks)
             print(responses)
     else:
-        partitions = db.query(Partition).filter(Partition.topic_id == topic.topic_id)
+        partitions = db.query(Partition).filter(
+            Partition.topic_id == topic.topic_id).order_by(Partition.created_date).all()
 
-# add producer 
-    new_producer = Producer(topic_id=topic.topic_id,next_partition_id=partitions[0].partition_id) # also add next_partition_id
-    
+# add producer
+    # also add next_partition_id
+    new_producer = Producer(topic_id=topic.topic_id,
+                            next_partition_id=partitions[0].partition_id)
+
     db.add(new_producer)
     db.commit()
     db.refresh(new_producer)
@@ -88,9 +94,8 @@ class EnqueueRequest(BaseModel):
     topic: str
     producer_id: int
     message: str
-    partition_id: Optional[int]=None
+    partition_id: Optional[int] = None
 
-    
 
 @router.post('/produce')
 async def all(request: EnqueueRequest, db: Session = Depends(get_db),):
@@ -106,20 +111,23 @@ async def all(request: EnqueueRequest, db: Session = Depends(get_db),):
     # print(topic_matched)
     if (topic_matched.topic_name == request.topic):
         if request.partition_id is not None:
-            partition = db.query(Partition).filter(Partition.partition_id == request.partition_id).first()
+            partition = db.query(Partition).filter(
+                Partition.partition_id == request.partition_id).first()
         # get partition data from partition table using next partition id
         else:
-            partition = db.query(Partition).filter(Partition.partition_id == producer.next_partition_id).first()
-            # get partitions from db   
-            partition_list = db.query(Partition).filter(Partition.topic_id == topic_matched.topic_id).order_by(Partition.created_date).all()
+            partition = db.query(Partition).filter(
+                Partition.partition_id == producer.next_partition_id).first()
+            # get partitions from db
+            partition_list = db.query(Partition).filter(
+                Partition.topic_id == topic_matched.topic_id).order_by(Partition.created_date).all()
             # get index of next_partition_id - using partition_list and next_partition_id <- index + 1
             print(partition_list)
             for i in range(len(partition_list)):
-                if partition_list[i].partition_id == producer.next_partition_id:        
+                if partition_list[i].partition_id == producer.next_partition_id:
                     next_partition_pos = i
                     break
             print(next_partition_pos)
-            new_index = (next_partition_pos +1) % len(partition_list)
+            new_index = (next_partition_pos + 1) % len(partition_list)
             print(new_index)
             # next_partition_pos.order_by(desc(Partitionmycol))
             producer.next_partition_id = partition_list[new_index].partition_id
@@ -130,17 +138,17 @@ async def all(request: EnqueueRequest, db: Session = Depends(get_db),):
         # send message to broker - data -- topic_name, parition_id, message
         data = {
             "topic_name": topic_matched.topic_name,
-            "partition_id":partition.partition_id,
+            "partition_id": partition.partition_id,
             "message": request.message
 
         }
-        # send 
+        # send
         async with aiohttp.ClientSession(trust_env=True) as session:
             tasks = []
-            url=f'{broker.address}/producer/enqueue'
+            url = f'{broker.address}/producer/enqueue'
             async with session.post(url, json=data) as response:
                 data = await response.json()
-            
+
             # task = asyncio.ensure_future(
             #     fetch(session, url=f'{broker.address}/producer/enqueue', data=data))
             # tasks.append(task)

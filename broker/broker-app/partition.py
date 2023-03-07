@@ -38,7 +38,7 @@ def create(request: PartionRequest, db: Session = Depends(get_db)):
     db.refresh(new_partition)
     return {
         "status": "success",
-        "message": f"Partition with topic '{request.topic_name}' and id '{request.partition_id}' created successfully with auto id {new_partition.topic_partition_id}"
+        "message": f"Partition with topic '{request.topic_name}' and id '{request.partition_id}' created successfully with id {new_partition.topic_partition_id}"
     }
 
 

@@ -1,6 +1,4 @@
 import consumer
-import producer
-import topics
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 # from core.config import settings
@@ -20,7 +18,7 @@ get_db = database.get_db
 base.Base.metadata.create_all(engine)
 
 
-app = FastAPI(title="Broker-Manager")
+app = FastAPI(title="Broker-Manager-Replica")
 
 
 app.add_middleware(
@@ -37,38 +35,38 @@ app.add_middleware(
 get_db = database.get_db
 
 
-app.include_router(topics.router)
-app.include_router(producer.router)
+# app.include_router(topics.router)
+# app.include_router(producer.router)
 app.include_router(consumer.router)
 # app.include_router(size.router)
 
 
 @app.get('/')
 def index():
-    return {"hello": "broker-manager"}
+    return {"hello": "broker-manager-replica"}
 
 
-class BrokerData(BaseModel):
-    broker_address: str
-    hostname: Optional[str] = None
+# class BrokerData(BaseModel):
+#     broker_address: str
+#     hostname: Optional[str] = None
 
 
-class InitDataRequest(BaseModel):
-    broker_data: List[BrokerData] = []
+# class InitDataRequest(BaseModel):
+#     broker_data: List[BrokerData] = []
 
 
-@app.post("/init-brokers-data")
-def init_broker_data(request: InitDataRequest, db: Session = Depends(get_db)):
-    for data in request.broker_data:
-        # create broker db row
-        broker = Broker(address=data.broker_address, hostname=data.hostname)
-        db.add(broker)
+# @app.post("/init-brokers-data")
+# def init_broker_data(request: InitDataRequest, db: Session = Depends(get_db)):
+#     for data in request.broker_data:
+#         # create broker db row
+#         broker = Broker(address=data.broker_address, hostname=data.hostname)
+#         db.add(broker)
 
-    db.commit()
-    # get all brokers data
-    brokers = db.query(Broker).all()
+#     db.commit()
+#     # get all brokers data
+#     brokers = db.query(Broker).all()
 
-    return {
-        "message": "brokers data added successfully",
-        "brokers": brokers
-    }
+#     return {
+#         "message": "brokers data added successfully",
+#         "brokers": brokers
+#     }

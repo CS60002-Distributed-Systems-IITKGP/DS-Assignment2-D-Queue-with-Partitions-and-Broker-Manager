@@ -13,35 +13,43 @@ router = APIRouter(
 )
 
 
-
 class DenqueueRequest(BaseModel):
     partition_id: int
     topic_name: str
     last_message_index: int
 
 
-
-@router.get('/dequeue')
+@router.post('/dequeue')
 def all(request: DenqueueRequest, db: Session = Depends(get_db),):
     # get topic_partition from db
     topic_partition = db.query(TopicPartition).filter(
         TopicPartition.partition_id == request.partition_id,
         TopicPartition.topic_name == request.topic_name).first()
-    
+
     # get message list from db
-    message_list = db.query(Message).filter(Message.topic_partition_id == topic_partition.topic_partition_id).all()
+    message_list = db.query(Message).filter(
+        Message.topic_partition_id == topic_partition.topic_partition_id).order_by(Message.created_date).all()
+
+    print(message_list)
 
     # get message
-    message = message_list[request.last_message_index+1]
+    # new_index = request.last_message_index+1
+    print(request.last_message_index)
+    if request.last_message_index < len(message_list):
+        message = message_list[request.last_message_index]
+    else:
+        raise HTTPException(status_code=404, detail={
+            "status": "failure",
+            "message": f"message not found!"
+        })
 
-    if(message is not None):
+    if message is not None:
         return {"message": message}
     else:
         raise HTTPException(status_code=404, detail={
             "status": "failure",
             "message": f"message not found!"
         })
-    
 
 
 # # Register consumer with topics
