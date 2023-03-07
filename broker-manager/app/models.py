@@ -75,7 +75,8 @@ class Partition(Base):
     topic_id = Column(Integer, ForeignKey('topics.topic_id'))
 
     broker_id = Column(Integer, ForeignKey('brokers.broker_id'))
-
+    created_date = Column(DateTime, server_default=func.now())
+    
     topics = relationship("Topic", backref="partitions")
     broker = relationship("Broker", backref="partitions")
 

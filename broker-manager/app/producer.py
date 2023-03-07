@@ -8,6 +8,7 @@ import requests
 import httpx
 import aiohttp
 import asyncio
+from sqlalchemy import desc
 
 get_db = database.get_db
 
@@ -87,6 +88,7 @@ class EnqueueRequest(BaseModel):
     topic: str
     producer_id: int
     message: str
+    partition_id: Optional[int]=None
 
     
 
@@ -103,9 +105,26 @@ async def all(request: EnqueueRequest, db: Session = Depends(get_db),):
     topic_matched = producer.topics
     # print(topic_matched)
     if (topic_matched.topic_name == request.topic):
+        if request.partition_id is not None:
+            partition = db.query(Partition).filter(Partition.partition_id == request.partition_id).first()
         # get partition data from partition table using next partition id
-        partition = db.query(Partition).filter(Partition.partition_id == producer.next_partition_id).first()
-
+        else:
+            partition = db.query(Partition).filter(Partition.partition_id == producer.next_partition_id).first()
+            # get partitions from db   
+            partition_list = db.query(Partition).filter(Partition.topic_id == topic_matched.topic_id).order_by(Partition.created_date).all()
+            # get index of next_partition_id - using partition_list and next_partition_id <- index + 1
+            print(partition_list)
+            for i in range(len(partition_list)):
+                if partition_list[i].partition_id == producer.next_partition_id:        
+                    next_partition_pos = i
+                    break
+            print(next_partition_pos)
+            new_index = (next_partition_pos +1) % len(partition_list)
+            print(new_index)
+            # next_partition_pos.order_by(desc(Partitionmycol))
+            producer.next_partition_id = partition_list[new_index].partition_id
+            db.commit()
+            db.refresh(producer)
         # get broker data using partition.broker_id
         broker = partition.broker
         # send message to broker - data -- topic_name, parition_id, message
