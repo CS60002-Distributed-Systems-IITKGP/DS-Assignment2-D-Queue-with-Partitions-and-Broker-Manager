@@ -1,9 +1,13 @@
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from core import database
-from models import Message, TopicPartition
+from models import Producer, Consumer, Topic, ConsumerPartition, Partition, BrokerStatusEnum, Broker
 from pydantic import BaseModel
+import requests
+import httpx
+import aiohttp
+import asyncio
 
 get_db = database.get_db
 
@@ -32,20 +36,27 @@ def create(request: RegisterConumerRequest, db: Session = Depends(get_db)):
             "status": "failure",
             "message": f"Topic '{request.topic}' not found!"
         })
+    # new consumer with topic_id
     new_consumer = Consumer(topic_id=topic.topic_id)
-    
-    #TODO: Redirect to broker for registration
-    
-    
-    # db.add(new_consumer)
-    # db.commit()
-    # db.refresh(new_consumer)
+    db.add(new_consumer)
+    db.commit()
+    db.refresh(new_consumer)
+    # get partitions from db
+    parttions = db.query(Partition).filter(Partition.topic_id == topic.topic_id).all()
+
+    # create new entry in consumer_partition table for each partition
+    for partition in parttions:
+        consumer_partition = ConsumerPartition(consumer_id=new_consumer.consumer_id,partition_id=partition.partition_id)
+        db.add(consumer_partition)
+
+    db.commit()
     # print(new_consumer.consumer_id)
     return {"status": "success", "consumer_id": new_consumer.consumer_id}
 
 
 @router.get('/consume')
-def all(request: DenqueueRequest, db: Session = Depends(get_db),):
+
+async def all(request: DenqueueRequest, db: Session = Depends(get_db),):
     consumer = db.query(Consumer).filter(
         Consumer.consumer_id == request.consumer_id
     ).first()
@@ -55,32 +66,63 @@ def all(request: DenqueueRequest, db: Session = Depends(get_db),):
             "message": f"conumer'{request.consumer_id}' not found!"
         })
     # error_flag = True
-    topic_matched = consumer.topics
+
+    topic_matched = consumer.topic
     # print(topic_matched)
     if (topic_matched.topic_name == request.topic):
-        
-        # All these fetching will be done through broker
 
-        # taking out messages for topic
-        consumer_messages = db.query(Message).filter(
-            Message.topic_id == topic_matched.topic_id
-        ).all()
-        msg_list_length = len(consumer_messages)
-        # consumer.last_message_index = 0
-        index = consumer.last_message_index
-        # print(index)
-        size = msg_list_length - consumer.last_message_index
-        if size == 0:
-            raise HTTPException(status_code=404, detail={
-                "status": "failure",
-                "message": f"No Messages for Topic '{request.topic}' "
-            })
-        # print(consumer_messages)
-        message = consumer_messages[index]
-        # print(message.message)
-        consumer.last_message_index = index + 1
+        # get next message index from consumer_partition using next partiotion id
+        consumer_partition = db.query(ConsumerPartition).filter(ConsumerPartition.consumer_id == consumer.consumer_id,
+                                                                ConsumerPartition.partition_id == consumer.next_partition_id).first()
+        
+        # send request to broker with partition id
+        partition = db.query(Partition).filter(Partition.partition_id == consumer.next_partition_id).first()
+
+        # update partition
+        partition = db.query(Partition).filter(Partition.partition_id == consumer.next_partition_id).first()
+        # get partitions from db   
+        partition_list = db.query(Partition).filter(Partition.topic_id == topic_matched.topic_id).order_by(Partition.created_date).all()
+        # get index of next_partition_id - using partition_list and next_partition_id <- index + 1
+        print(partition_list)
+        for i in range(len(partition_list)):
+            if partition_list[i].partition_id == consumer.next_partition_id:        
+                next_partition_pos = i
+                break
+        print(next_partition_pos)
+        new_index = ((next_partition_pos + 1) % len(partition_list))
+        print(new_index)
+        # next_partition_pos.order_by(desc(Partitionmycol))
+        consumer.next_partition_id = partition_list[new_index].partition_id
         db.commit()
-        return {"status": "success", "message": message.message}
+        db.refresh(consumer)
+
+
+
+        broker = partition.broker
+
+        data = {
+            "partition_id": consumer.next_partition_id,
+            "topic_name": request.topic,
+            "last_message_index": consumer_partition.last_message_index
+        }
+        # send 
+        async with aiohttp.ClientSession(trust_env=True) as session:
+            tasks = []
+            url=f'{broker.address}/consumer/dequeue'
+            async with session.post(url, json=data) as response:
+                data = await response.json()
+                status = await response.status
+        # check status code
+        if(status == 200):
+            print(data)
+            # update last message index + 1
+            consumer_partition.last_message_index = consumer_partition.last_message_index + 1
+            db.commit()
+            db.refresh(consumer_partition)
+            return {"status": "success", "responses": data}
+        else:
+            return {"response": response}
+
     else:
         raise HTTPException(status_code=404, detail={
             "status": "failure",

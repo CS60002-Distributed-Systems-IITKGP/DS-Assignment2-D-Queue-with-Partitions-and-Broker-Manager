@@ -153,4 +153,3 @@ async def all(request: EnqueueRequest, db: Session = Depends(get_db),):
             "status": "failure",
             "message": f"Topic '{request.topic}' not found!"
         })
-
