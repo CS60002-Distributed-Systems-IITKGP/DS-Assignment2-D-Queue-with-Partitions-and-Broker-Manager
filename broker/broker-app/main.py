@@ -1,10 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from core.config import settings
+# from core.config import settings
 from core.database import engine
 from core import base, database
 
 # # add routers
+import partition
 # import producer
 # import consumer
 # import size
@@ -15,12 +16,14 @@ from core import base, database
 base.Base.metadata.create_all(engine)
 
 
-app = FastAPI(title=settings.PROJECT_NAME)
+app = FastAPI(title="Broker")
 
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
+    # allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
+    allow_origins=["http://localhost:8000", "https://localhost:8000",
+                   "http://localhost", "https://localhost"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -29,7 +32,7 @@ app.add_middleware(
 # db
 get_db = database.get_db
 
-
+app.include_router(partition.router)
 # app.include_router(topics.router)
 # app.include_router(producer.router)
 # app.include_router(consumer.router)

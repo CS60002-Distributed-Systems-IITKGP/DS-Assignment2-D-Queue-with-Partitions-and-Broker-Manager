@@ -12,7 +12,8 @@ class TopicPartition(Base):
     __tablename__ = 'topicpartitions'
     __table_args__ = (UniqueConstraint("topic_name", "partition_id"),)
 
-    topic_partition_id = Column(Integer, primary_key=True, index=True)
+    topic_partition_id = Column(
+        Integer, primary_key=True, index=True)  # auto generate
 
     topic_name = Column(String, )  # 2 column unique
     partition_id = Column(Integer)

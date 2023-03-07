@@ -7,16 +7,6 @@ from sqlalchemy import Enum
 
 # Broker Manager
 
-# Producer -  id  topic_id→   next_partion_id
-
-# Consumer -  id  topic_id→  next_partion_id   round_number
-
-# Topic  -  id  topic_name
-
-# Partition  -  id  topic_id→  broker_id→
-
-# BrokerData -  id  address
-
 
 class BrokerStatusEnum(enum.Enum):
     ACTIVE = 'active'
@@ -60,7 +50,7 @@ class Consumer(Base):
     round_number = Column(Integer, default=0)
 
     topic = relationship("Topic", backref="consumers")
-    partition = relationship("Partition", backref="consumers")
+    # partition = relationship("Partition", backref="consumers")
 
 
 # ConsumerPartitionData - id conumer_id  partiton_id→  last_message_index
@@ -95,6 +85,18 @@ class Broker(Base):
     __tablename__ = 'brokers'
 
     broker_id = Column(Integer, primary_key=True, index=True)
-    address = Column(String, nullable=False)
+    address = Column(String, nullable=False, unique=True)
+    hostname = Column(String)
 
-    active = Column(Enum(BrokerStatusEnum))
+    active = Column(Enum(BrokerStatusEnum), default=BrokerStatusEnum.ACTIVE)
+
+
+# Producer -  id  topic_id→   next_partion_id
+
+# Consumer -  id  topic_id→  next_partion_id   round_number
+
+# Topic  -  id  topic_name
+
+# Partition  -  id  topic_id→  broker_id→
+
+# BrokerData -  id  address
