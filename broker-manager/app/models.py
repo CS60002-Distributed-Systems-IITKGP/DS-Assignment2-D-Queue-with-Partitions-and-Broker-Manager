@@ -27,7 +27,7 @@ class Producer(Base):
     producer_id = Column(Integer, primary_key=True, index=True)
     topic_id = Column(Integer, ForeignKey('topics.topic_id'))
 
-    next_partition_id = Column(Integer, ForeignKey('partitions.partition_id'))
+    next_partition_id = Column(Integer, ForeignKey('partitions.partition_id') )
 
     # round_number++;  round_number = round_number % partitions_count  (0 to n-1)
     # to get partition id from ordered list

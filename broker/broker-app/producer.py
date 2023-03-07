@@ -1,56 +1,48 @@
-# from fastapi import APIRouter, Depends, status, HTTPException
-# from sqlalchemy.orm import Session
-# from typing import List
-# from core import database
-# from models import Message, TopicPartition
-# from pydantic import BaseModel
+from fastapi import APIRouter, Depends, status, HTTPException
+from sqlalchemy.orm import Session
+from typing import List
+from core import database
+from models import Message, TopicPartition
+from pydantic import BaseModel
 
 
-# get_db = database.get_db
 
-# router = APIRouter(
-#     prefix="/producer",
-#     tags=['producer']
-# )
+get_db = database.get_db
 
-
-# class RegisterProducerRequest(BaseModel):
-#     topic: str
+router = APIRouter(
+    prefix="/producer",
+    tags=['producer']
+)
 
 
-# class EnqueueRequest(BaseModel):
-#     topic: str
-#     producer_id: int
-#     message: str
+class RegisterProducerRequest(BaseModel):
+    topic: str
+
+# topic_name, parition_id, message
+class EnqueueRequest(BaseModel):
+    topic_name: str
+    partition_id: int
+    message: str
 
 # # posting message
 
 
-# @router.post('/produce')
-# def all(request: EnqueueRequest, db: Session = Depends(get_db),):
-#     producer = db.query(Producer).filter(
-#         Producer.producer_id == request.producer_id
-#     ).first()
-#     if producer is None:
-#         raise HTTPException(status_code=404, detail={
-#             "status": "failure",
-#             "message": f"producer '{request.producer_id}' not found!"
-#         })
-#     topic_matched = producer.topics
-#     # print(topic_matched)
-#     if (topic_matched.topic_name == request.topic):
-#         # add message for topic
-#         new_message = Message(
-#             topic_id=topic_matched.topic_id, message=request.message)
-#         db.add(new_message)
-#         db.commit()
-#         db.refresh(new_message)
-#         return {"status": "success"}
-#     else:
-#         raise HTTPException(status_code=404, detail={
-#             "status": "failure",
-#             "message": f"Topic '{request.topic}' not found!"
-#         })
+@router.post('/enqueue')
+def all(request: EnqueueRequest, db: Session = Depends(get_db),):
+    # get partition data from TopicPartition
+    print(request)
+    topic_partition = db.query(TopicPartition).filter(TopicPartition.topic_name == request.topic_name,TopicPartition.partition_id == request.partition_id).first()
+    if topic_partition is None:
+        raise HTTPException(status_code=404, detail={
+            "status": "failure",
+            "message": f"topic '{request.topic_name}' with partition {request.partition_id} not found!"
+        })
+    # add message using topicpartition.topic_partition_id
+    message = Message(topic_partition_id = topic_partition.topic_partition_id,message = request.message)
+    db.add(message)
+    db.commit()
+    db.refresh(message)
+    return {"status": "success"}
 
 
 # # Register producer with topics
