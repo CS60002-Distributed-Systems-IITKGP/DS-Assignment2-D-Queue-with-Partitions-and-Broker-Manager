@@ -38,6 +38,7 @@ open docs on [http://127.0.0.1:9000/docs](http://127.0.0.1:9000/docs) -->
 Multiple producers subscribe to different topics and under those topics they generate log messages asynchronously and there are multiple consumers who are also subscribed to multiple topics and consumed those messages from the queue asynchronously.  
 These topics are divided into 4 partitions, each partition are maintained by different brokers. There is a broker manager which acts as inter-communicator between producer consumer and the brokers.
 
+
 ## HTTP APIs
 ### Register Producer
 This operation allows a producer to register for a certain topic with the message queue.For each subscription/registration of a specific topic, unique registration id will be assigned to the producer.If that specific topic is not present then it will create a new topic with the reqested topic name by calling **Create Topic API**.
