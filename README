@@ -1,29 +1,3 @@
-<!-- ## Run App
-
-```sh
-#using docker-compose
-docker-compose up --scale broker=4
-
-
-```
-
-<br/>
-
-**Broker Manager**
-
-open docs on [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-
-<br/>
-
-**Broker 1**
-
-open docs on [http://127.0.0.1:9000/docs](http://127.0.0.1:9000/docs) -->
-
-
-<!-- **Distributed queue**
-
--   able to handle multiple producers and consumers that can subscribe to different topics
--   Different producers can publish topics asynchronously over the queue, whereas multiple consumers can retrieve the topics asynchronously, for which they are subscribed to -->
 
 # Distributed Queue with Partition And Broker Manager
 ## Contributors
@@ -218,11 +192,7 @@ Broker table contains 3 attributes:
 2. address
 3. hostname
 
-<!-- ### Message
-Topic table contains three attributes:
-1. message_id (primary key)
-2. topic_id (foreign key)
-3. message -->
+
 
 
 
