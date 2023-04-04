@@ -1,3 +1,4 @@
+import health
 import consumer
 import producer
 import topics
@@ -14,7 +15,6 @@ from models import Broker
 get_db = database.get_db
 
 # add routers
-import health
 #import producer
 #import consumer
 # import size
@@ -41,11 +41,11 @@ get_db = database.get_db
 
 
 app.include_router(topics.router)
-app.include_router(health.router)
 # app.include_router(producer.router)
 # app.include_router(consumer.router)
 app.include_router(producer.router)
 app.include_router(consumer.router)
+app.include_router(health.router)
 # app.include_router(size.router)
 
 

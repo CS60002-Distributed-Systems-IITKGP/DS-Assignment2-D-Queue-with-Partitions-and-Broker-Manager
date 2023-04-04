@@ -11,8 +11,10 @@ router = APIRouter(
     prefix="/checkme",
     tags=['healthcheck']
 )
-@router.put("/")
-def healthcheck(response: Response):
+
+
+@router.get("/")
+def healthcheck():
     message = health.run()
     # status_code, headers = health.run()
     # print(message,status_code,headers)
@@ -20,4 +22,3 @@ def healthcheck(response: Response):
     # response.headers = headers
     # print(message)
     return message
-
