@@ -90,6 +90,10 @@ class Broker(Base):
     hostname = Column(String)
 
     active = Column(Enum(BrokerStatusEnum), default=BrokerStatusEnum.ACTIVE)
+    # last_timestamp = Column(String, nullable=True, unique=True)
+
+    def __repr__(self):
+        return f'{self.broker_id} {self.address} {self.hostname} {self.active}'
 
 
 # Producer -  id  topic_id→   next_partion_id
