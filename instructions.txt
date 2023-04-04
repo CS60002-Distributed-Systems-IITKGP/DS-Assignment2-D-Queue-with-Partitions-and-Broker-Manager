@@ -19,3 +19,6 @@ new >   cd broker/broker-app && python3 -m uvicorn main:app --reload --port 9000
 new >   cd broker/broker-app && python3 -m uvicorn main:app --reload --port 9001
 new >   cd broker/broker-app && python3 -m uvicorn main:app --reload --port 9002
 new >   cd broker/broker-app && python3 -m uvicorn main:app --reload --port 9003
+
+4. run broker-manager-replica on 8020 port
+> cd broker-manager-replica/app && python3 -m uvicorn main:app --reload --port 8020
